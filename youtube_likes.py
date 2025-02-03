@@ -1,9 +1,13 @@
 import os
 import requests
 import time
+import logging
 from datetime import datetime
 from datetime import datetime, timezone
 import zoneinfo
+
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Set API Key and Channel ID from environment variables
 API_KEY = os.getenv("YOUTUBE_API_KEY")
@@ -50,12 +54,12 @@ def fetch_latest_video_ids():
     data = response.json()
 
     video_ids = [item["id"]["videoId"] for item in data.get("items", [])]
-    print(f"✅ Fetched {len(video_ids)} latest video IDs.")
+    logging.info(f"✅ Fetched {len(video_ids)} latest video IDs.")
 
 def get_video_likes():
     """Fetch like counts for stored video IDs."""
     if not video_ids:
-        print("⚠️ No video IDs available. Skipping like check.")
+        logging.warning("⚠️ No video IDs available. Skipping like check.")
         return {}
 
     video_data = {}
@@ -91,10 +95,10 @@ def check_for_new_likes():
         previous_likes[title] = likes
     
     if total_new_likes > 0 and not is_within_silent_hours():
-        print(f"🎉 {total_new_likes} new likes detected! Sending API request...")
+        logging.info(f"🎉 {total_new_likes} new likes detected! Sending API request...")
         requests.get(LIKE_TRIGGER_URL)
     elif total_new_likes > 0:
-        print(f"⏳ {total_new_likes} new likes detected, but within silent hours. Skipping API request.")
+        logging.info(f"⏳ {total_new_likes} new likes detected, but within silent hours. Skipping API request.")
 
 def main():
     last_video_fetch_time = 0
