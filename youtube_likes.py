@@ -34,7 +34,10 @@ previous_subscriber_count = None
 def is_within_silent_hours():
     """Checks if the current time is between start and end time."""
     local_tz = zoneinfo.ZoneInfo(TIMEZONE)
-    now = datetime.now(timezone.utc).astimezone(local_tz)
+    now = datetime.now().astimezone(local_tz)
+    from datetime import timezone, timedelta
+  # Set local timezone offset in hours
+  # Convert to local time
     local_hour = now.hour
     return local_hour >= END_TIME or local_hour < START_TIME
 
