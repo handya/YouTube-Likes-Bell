@@ -18,7 +18,7 @@ START_TIME = int(os.getenv("START_TIME", 8))
 END_TIME = int(os.getenv("END_TIME", 20))
 
 # Polling intervals
-VIDEO_FETCH_INTERVAL = 1800  # Fetch new videos every 30 min (1800 sec)
+VIDEO_FETCH_INTERVAL = 21600  # Fetch new videos every 6hrs (21600 sec)
 LIKE_CHECK_INTERVAL = 60  # Check likes every 1 min (60 sec)
 
 # YouTube API URLs
