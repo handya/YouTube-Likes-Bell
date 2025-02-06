@@ -119,13 +119,15 @@ def check_for_new_subscribers():
 
     if "items" in data:
         subscriber_count = int(data["items"][0]["statistics"].get("subscriberCount", 0))
-        if previous_subscriber_count is not None and subscriber_count > previous_subscriber_count:
+        if previous_subscriber_count is not None and subscriber_count > previous_subscriber_count and not is_within_silent_hours():
             logging.info(f"🎉 New subscriber detected! Sending API request...")
             try:
                 requests.get(SUBSCRIBER_TRIGGER_URL, timeout=5)
                 logging.info("✅ Successfully triggered subscriber URL.")
             except requests.exceptions.RequestException as e:
                 logging.error(f"❌ Failed to send subscriber trigger: {e}")
+        elif previous_subscriber_count is not None and subscriber_count > previous_subscriber_count:
+            logging.info(f"🎉 New subscriber detected! But within silent hours. Skipping API request.")
         previous_subscriber_count = subscriber_count
 
 def main():
