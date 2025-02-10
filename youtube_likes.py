@@ -35,9 +35,6 @@ def is_within_silent_hours():
     """Checks if the current time is between start and end time."""
     local_tz = zoneinfo.ZoneInfo(TIMEZONE)
     now = datetime.now().astimezone(local_tz)
-    from datetime import timezone, timedelta
-  # Set local timezone offset in hours
-  # Convert to local time
     local_hour = now.hour
     return local_hour >= END_TIME or local_hour < START_TIME
 
@@ -52,11 +49,14 @@ def fetch_latest_video_ids():
         "order": "date",
         "key": API_KEY
     }
-    response = requests.get(SEARCH_URL, params=params)
-    data = response.json()
-
-    video_ids = [item["id"]["videoId"] for item in data.get("items", [])]
-    logging.info(f"✅ Fetched {len(video_ids)} latest video IDs.")
+    try:
+        response = requests.get(SEARCH_URL, params=params)
+        response.raise_for_status()
+        data = response.json()
+        video_ids = [item["id"]["videoId"] for item in data.get("items", [])]
+        logging.info(f"✅ Fetched {len(video_ids)} latest video IDs.")
+    except requests.exceptions.RequestException as e:
+        logging.error(f"❌ Failed to fetch latest video IDs: {e}")
 
 def get_video_likes():
     """Fetch like counts for stored video IDs."""
@@ -72,15 +72,18 @@ def get_video_likes():
             "id": batch_ids,
             "key": API_KEY
         }
-        response = requests.get(VIDEOS_URL, params=params)
-        data = response.json()
-
-        if "items" in data:
-            for item in data["items"]:
-                title = item["snippet"]["title"]
-                like_count = int(item["statistics"].get("likeCount", 0))
-                video_data[title] = like_count
-
+        try:
+            response = requests.get(VIDEOS_URL, params=params)
+            response.raise_for_status()
+            data = response.json()
+            if "items" in data:
+                for item in data["items"]:
+                    title = item["snippet"]["title"]
+                    like_count = int(item["statistics"].get("likeCount", 0))
+                    video_data[title] = like_count
+        except requests.exceptions.RequestException as e:
+            logging.error(f"❌ Failed to fetch video likes: {e}")
+    
     return video_data
 
 def check_for_new_likes():
@@ -114,21 +117,24 @@ def check_for_new_subscribers():
         "id": CHANNEL_ID,
         "key": API_KEY
     }
-    response = requests.get(CHANNEL_STATS_URL, params=params)
-    data = response.json()
-
-    if "items" in data:
-        subscriber_count = int(data["items"][0]["statistics"].get("subscriberCount", 0))
-        if previous_subscriber_count is not None and subscriber_count > previous_subscriber_count and not is_within_silent_hours():
-            logging.info(f"🎉 New subscriber detected! Sending API request...")
-            try:
-                requests.get(SUBSCRIBER_TRIGGER_URL, timeout=5)
-                logging.info("✅ Successfully triggered subscriber URL.")
-            except requests.exceptions.RequestException as e:
-                logging.error(f"❌ Failed to send subscriber trigger: {e}")
-        elif previous_subscriber_count is not None and subscriber_count > previous_subscriber_count:
-            logging.info(f"🎉 New subscriber detected! But within silent hours. Skipping API request.")
-        previous_subscriber_count = subscriber_count
+    try:
+        response = requests.get(CHANNEL_STATS_URL, params=params)
+        response.raise_for_status()
+        data = response.json()
+        if "items" in data:
+            subscriber_count = int(data["items"][0]["statistics"].get("subscriberCount", 0))
+            if previous_subscriber_count is not None and subscriber_count > previous_subscriber_count and not is_within_silent_hours():
+                logging.info("🎉 New subscriber detected! Sending API request...")
+                try:
+                    requests.get(SUBSCRIBER_TRIGGER_URL, timeout=5)
+                    logging.info("✅ Successfully triggered subscriber URL.")
+                except requests.exceptions.RequestException as e:
+                    logging.error(f"❌ Failed to send subscriber trigger: {e}")
+            elif previous_subscriber_count is not None and subscriber_count > previous_subscriber_count:
+                logging.info("🎉 New subscriber detected! But within silent hours. Skipping API request.")
+            previous_subscriber_count = subscriber_count
+    except requests.exceptions.RequestException as e:
+        logging.error(f"❌ Failed to fetch subscriber count: {e}")
 
 def main():
     last_video_fetch_time = 0
