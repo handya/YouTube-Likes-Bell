@@ -1,28 +1,31 @@
-
 #include <SPI.h>
 #include <Ethernet.h>
-#include <Servo.h> 
 
-Servo bellServo;
-const int bellServoPin = 5;
-const int bellServoON = 180; 
-const int bellServoOFF = 40; // Zero position
+const int bellPin = 2;
+
+// I had issues with ethernet card reset pin
+// So I've added a manual reset pin to reset the ethernet card on setup()
+const int ethernetResetPin = 3;
 
 byte mac[] = { 0x14, 0x5E, 0x12, 0x10, 0xD5, 0xE2 };
 
-IPAddress ip(192,168,3,111);
+IPAddress ip(10,1,1,111);
 
 EthernetServer server(80);
 
 String readString;
 
-bool shouldPlay;
+bool shouldPlayOnce;
+bool shouldPlayTwice;
+bool shouldPlayThrice;
 
 void setup() {
-    bellServo.attach(bellServoPin);
-    bellServo.write(bellServoOFF);
-    delay(500);
-    bellServo.detach();
+    pinMode(bellPin, OUTPUT);
+    pinMode(ethernetResetPin, OUTPUT);
+    digitalWrite(ethernetResetPin, LOW); 
+    delay(100);
+    digitalWrite(ethernetResetPin, HIGH); 
+    delay(100);
 
     Ethernet.begin(mac, ip);
     server.begin();
@@ -46,8 +49,12 @@ void listenForClients() {
                 } 
         
                 if (c == '\n' && currentLineIsBlank) {
-                  if (checkAPICommand(readString, "play")) {// lights off
-                      shouldPlay = true;
+                  if (checkAPICommand(readString, "playonce")) {
+                      shouldPlayOnce = true;
+                  } else if (checkAPICommand(readString, "playtwice")) {
+                      shouldPlayTwice = true;
+                  } else if (checkAPICommand(readString, "playthrice")) {
+                      shouldPlayThrice = true;
                   }
 
                   client.println("HTTP/1.1 200 OK");
@@ -74,19 +81,36 @@ void listenForClients() {
 }
 
 void playIfNeeded() {
-     if (shouldPlay) {
-        shouldPlay = false;
-        bellServo.attach(bellServoPin);
-        delay(10); 
-        bellServo.write(bellServoON); 
-        delay(100);  
-        bellServo.write(bellServoOFF); 
-        delay(500);  
-        bellServo.write(bellServoON); 
-        delay(100);  
-        bellServo.write(bellServoOFF); 
-        delay(100);  
-        bellServo.detach();
+     if (shouldPlayOnce) {
+        shouldPlayOnce = false;
+        digitalWrite(bellPin, HIGH); 
+        delay(50);
+        digitalWrite(bellPin, LOW);
+        delay(100);
+     } else if (shouldPlayTwice) {
+      shouldPlayTwice = false;
+        digitalWrite(bellPin, HIGH); 
+        delay(30);
+        digitalWrite(bellPin, LOW);
+        delay(500);
+        digitalWrite(bellPin, HIGH); 
+        delay(80);
+        digitalWrite(bellPin, LOW);
+        delay(100);
+     } else if (shouldPlayThrice) {
+        shouldPlayThrice = false;
+        digitalWrite(bellPin, HIGH); 
+        delay(50);
+        digitalWrite(bellPin, LOW);
+        delay(200);
+        digitalWrite(bellPin, HIGH); 
+        delay(50);
+        digitalWrite(bellPin, LOW);
+        delay(200);
+        digitalWrite(bellPin, HIGH); 
+        delay(50);
+        digitalWrite(bellPin, LOW);
+        delay(100);
      }
 }
 
