@@ -2,6 +2,10 @@
 
 This script tracks new likes and subscriber counts for a YouTube channel using the YouTube Data API. When a new like or subscriber is detected, it triggers API requests to specified URLs.
 
+[![Watch the video](https://img.youtube.com/vi/g50869aqkJg/hqdefault.jpg)](https://www.youtube.com/watch?v=g50869aqkJg)
+
+[Find out more on YeahNahDIY.com](https://yeahnahdiy.com/blog/youtube-likes-made-real)
+
 ## Features
 - Fetches the latest video IDs from a YouTube channel.
 - Monitors video likes and detects increases.
